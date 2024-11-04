@@ -1,5 +1,6 @@
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Nat "mo:base/Nat";
+import Nat64 "mo:base/Nat64";
 import Result "mo:base/Result";
 
 import Text "mo:base/Text";
@@ -22,6 +23,7 @@ actor {
             function : shared query (HttpResponse) -> async HttpResponse;
             context : Blob;
         };
+        value : ?Nat64;
     };
 
     type HttpResponse = {
@@ -60,6 +62,7 @@ actor {
                 headers = headers;
                 body = ?Text.encodeUtf8(body);
                 transform = null;
+                value = null;
             });
 
             switch (Text.decodeUtf8(response.body)) {
