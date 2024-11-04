@@ -15,7 +15,7 @@ actor {
 
     type HttpRequest = {
         url : Text;
-        method : Text;
+        method : {#get; #post; #head};
         body : ?Blob;
         headers : [(Text, Text)];
     };
@@ -49,27 +49,32 @@ actor {
         let body = "{\"model\":\"claude-3-5-sonnet-20241022\",\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"" # base64Image # "\"}}]}],\"system\":\"You are an expert computer vision system. Analyze the provided image and return ONLY a JSON object containing bounding boxes. Follow these strict rules:\\n1. Output MUST be valid JSON with no additional text\\n2. Each detected object must have:\\n   - 'element': descriptive name of the object\\n   - 'bbox': [x1, y1, x2, y2] coordinates (normalized 0-1)\\n   - 'confidence': confidence score (0-1)\\n3. Use this exact format:\\n   {\\n     \\\"detections\\\": [\\n       {\\n         \\\"element\\\": \\\"object_name\\\",\\n         \\\"bbox\\\": [x1, y1, x2, y2],\\n         \\\"confidence\\\": 0.95\\n       }\\n     ]\\n   }\"}";
 
         Cycles.add(2_000_000_000);
-        let response = await ic.http_request({
-            url = url;
-            method = "POST";
-            headers = headers;
-            body = ?Text.encodeUtf8(body);
-        });
+        try {
+            let response = await ic.http_request({
+                url = url;
+                method = #post;
+                headers = headers;
+                body = ?Text.encodeUtf8(body);
+            });
 
-        switch (Text.decodeUtf8(response.body)) {
-            case (null) { throw Error.reject("Failed to decode response body") };
-            case (?text) {
-                let splitResult = Text.split(text, #text "\"content\":");
-                let contentArray = Iter.toArray(splitResult);
-                if (contentArray.size() > 1) {
-                    let contentText = contentArray[1];
-                    let trimmedContent = Text.trim(contentText, #text "{");
-                    let finalContent = Text.trim(trimmedContent, #text "}");
-                    finalContent
-                } else {
-                    throw Error.reject("Content not found in response");
+            switch (Text.decodeUtf8(response.body)) {
+                case (null) { throw Error.reject("Failed to decode response body") };
+                case (?text) {
+                    let splitResult = Text.split(text, #text "\"content\":");
+                    let contentArray = Iter.toArray(splitResult);
+                    if (contentArray.size() > 1) {
+                        let contentText = contentArray[1];
+                        let trimmedContent = Text.trim(contentText, #text "{");
+                        let finalContent = Text.trim(trimmedContent, #text "}");
+                        finalContent
+                    } else {
+                        throw Error.reject("Content not found in response");
+                    };
                 };
             };
+        } catch (e) {
+            Debug.print("Error making HTTP request: " # Error.message(e));
+            throw Error.reject("Failed to make HTTP request: " # Error.message(e));
         };
     };
 };
