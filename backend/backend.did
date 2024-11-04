@@ -1,0 +1,5 @@
+service : {
+  detectObjects: (text, text) -> (text);
+  getApiKey: () -> (text) query;
+  saveApiKey: (text) -> ();
+}

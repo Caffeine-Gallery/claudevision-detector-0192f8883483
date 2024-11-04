@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Vision Object Detection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Claude Vision Object Detection</h1>
+        
+        <div class="input-section">
+            <input type="password" class="api-key-input" placeholder="Enter your Anthropic API key" />
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+            <p>Drag and drop images here or click to select files</p>
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" />
+        </div>
+
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Processing images...</p>
+        </div>
+
+        <div class="error" id="errorMessage"></div>
+
+        <div class="preview-container" id="previewContainer"></div>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+</html>
