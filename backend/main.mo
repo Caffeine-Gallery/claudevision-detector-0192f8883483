@@ -18,6 +18,10 @@ actor {
         method : {#get; #post; #head};
         body : ?Blob;
         headers : [(Text, Text)];
+        transform : ?{
+            function : shared query (HttpResponse) -> async HttpResponse;
+            context : Blob;
+        };
     };
 
     type HttpResponse = {
@@ -55,6 +59,7 @@ actor {
                 method = #post;
                 headers = headers;
                 body = ?Text.encodeUtf8(body);
+                transform = null;
             });
 
             switch (Text.decodeUtf8(response.body)) {
