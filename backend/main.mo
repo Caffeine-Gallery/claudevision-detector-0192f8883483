@@ -1,6 +1,5 @@
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import Nat "mo:base/Nat";
-import Nat64 "mo:base/Nat64";
 import Result "mo:base/Result";
 
 import Text "mo:base/Text";
@@ -16,14 +15,9 @@ actor {
 
     type HttpRequest = {
         url : Text;
-        method : {#get; #post; #head};
+        method : Text;
         body : ?Blob;
         headers : [(Text, Text)];
-        transform : ?{
-            function : shared query (HttpResponse) -> async HttpResponse;
-            context : Blob;
-        };
-        value : ?Nat64;
     };
 
     type HttpResponse = {
@@ -32,9 +26,9 @@ actor {
         body : Blob;
     };
 
-    let ic = actor "aaaaa-aa" : actor {
-        http_request : HttpRequest -> async HttpResponse;
-    };
+    let ic : actor { 
+        http_request : HttpRequest -> async HttpResponse 
+    } = actor "aaaaa-aa";
 
     public func saveApiKey(key : Text) : async () {
         apiKey := key;
@@ -46,25 +40,22 @@ actor {
 
     public func detectObjects(key : Text, base64Image : Text) : async Text {
         let url = "https://api.anthropic.com/v1/messages";
-        let headers = [
-            ("Content-Type", "application/json"),
-            ("x-api-key", key),
-            ("anthropic-version", "2023-06-01")
-        ];
-
         let body = "{\"model\":\"claude-3-5-sonnet-20241022\",\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/jpeg\",\"data\":\"" # base64Image # "\"}}]}],\"system\":\"You are an expert computer vision system. Analyze the provided image and return ONLY a JSON object containing bounding boxes. Follow these strict rules:\\n1. Output MUST be valid JSON with no additional text\\n2. Each detected object must have:\\n   - 'element': descriptive name of the object\\n   - 'bbox': [x1, y1, x2, y2] coordinates (normalized 0-1)\\n   - 'confidence': confidence score (0-1)\\n3. Use this exact format:\\n   {\\n     \\\"detections\\\": [\\n       {\\n         \\\"element\\\": \\\"object_name\\\",\\n         \\\"bbox\\\": [x1, y1, x2, y2],\\n         \\\"confidence\\\": 0.95\\n       }\\n     ]\\n   }\"}";
+
+        let request : HttpRequest = {
+            url = url;
+            method = "POST";
+            body = ?Text.encodeUtf8(body);
+            headers = [
+                ("Content-Type", "application/json"),
+                ("x-api-key", key),
+                ("anthropic-version", "2023-06-01")
+            ];
+        };
 
         Cycles.add(2_000_000_000);
         try {
-            let response = await ic.http_request({
-                url = url;
-                method = #post;
-                headers = headers;
-                body = ?Text.encodeUtf8(body);
-                transform = null;
-                value = null;
-            });
-
+            let response = await ic.http_request(request);
             switch (Text.decodeUtf8(response.body)) {
                 case (null) { throw Error.reject("Failed to decode response body") };
                 case (?text) {
